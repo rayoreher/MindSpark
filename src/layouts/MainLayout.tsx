@@ -79,7 +79,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {user && (
                 <>
                   <a
-                    href="/#/buckets"
+                    href="/buckets"
                     className="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
                   >
                     Buckets
