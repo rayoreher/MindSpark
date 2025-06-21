@@ -1,10 +1,9 @@
 import React, { ComponentType } from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import { Home } from '../pages/Home';
 import { Upload } from '../pages/Upload';
 import { Login } from '../pages/Login';
-import { Questions } from '../pages/Questions';
 import { Quiz } from '../pages/Quiz';
 import { Buckets, CreateBucket, BucketDetails } from '../pages/Buckets';
 import { ProtectedRoute } from '../components/auth';
@@ -17,18 +16,10 @@ export const AppRouter: React.FC = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route 
-            path="buckets/:id/upload" 
+            path="/buckets/:id/upload" 
             element={
               <ProtectedRoute>
                 <Upload />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/questions" 
-            element={
-              <ProtectedRoute>
-                <Questions />
               </ProtectedRoute>
             } 
           />

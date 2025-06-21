@@ -38,9 +38,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <nav className="hidden md:flex items-center space-x-8">
               {user && (
                 <>
-                  <a href="/buckets" className="text-gray-700 hover:text-primary-600 font-medium">
+                  <Link to="/buckets" className="text-gray-700 hover:text-primary-600 font-medium">
                     Buckets
-                  </a>
+                  </Link>
                 </>
               )}
             </nav>
@@ -79,7 +79,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {user && (
                 <>
                   <a
-                    href="/buckets"
+                    href="/#/buckets"
                     className="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
                   >
                     Buckets
