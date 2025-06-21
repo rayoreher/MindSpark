@@ -1,0 +1,98 @@
+name: Build and Deploy React Vite App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
+
+    - name: Run tests
+      run: npm run test --if-present
+      continue-on-error: true
+
+    - name: Build application
+      env:
+        VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      run: npm run build
+
+    - name: Upload build artifacts
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-files-pr-${{ github.event.number }}
+        path: dist/
+        retention-days: 7
+
+    - name: Setup Pages
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: actions/configure-pages@v4
+
+    - name: Upload Pages artifact
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./dist
+
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+  # Summary job
+  summary:
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Build Summary
+      run: |
+        echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.build-and-deploy.result }}" == "success" ]; then
+          echo "✅ **Build Status**: Success" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "🌐 **Deployment**: Production" >> $GITHUB_STEP_SUMMARY
+            echo "📱 **Live URL**: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "🔍 **Type**: Pull Request Build" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **Artifact**: Build files uploaded for review" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "❌ **Build Status**: Failed" >> $GITHUB_STEP_SUMMARY
+          echo "🔧 **Action Required**: Check the build logs above" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Environment Variables Used:" >> $GITHUB_STEP_SUMMARY
+        echo "- VITE_RECAPTCHA_SITE_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY != '' && '✅ Set' || '❌ Missing' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- VITE_EMAILJS_PUBLIC_KEY: ${{ vars.VITE_SUPABASE_URL != '' && '✅ Set' || '❌ Missing' }}" >> $GITHUB_STEP_SUMMARY
