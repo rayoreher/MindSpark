@@ -1,0 +1,63 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try Again",
+    "goHome": "Go Home"
+  },
+  "navigation": {
+    "home": "Home",
+    "upload": "Upload",
+    "questions": "Questions",
+    "login": "Login"
+  },
+  "home": {
+    "hero": {
+      "title": "Learn Smarter with MindSpark",
+      "subtitle": "Unlock your potential with focused reading, interactive quizzes, and smart flashcards designed to enhance retention and accelerate learning.",
+      "cta": "Start Learning"
+    },
+    "features": {
+      "title": "Why Choose MindSpark?",
+      "subtitle": "Discover the features that make learning effective and enjoyable",
+      "focusedReading": {
+        "title": "Focused Reading",
+        "description": "Distraction-free reading materials curated for optimal learning"
+      },
+      "interactiveQuizzes": {
+        "title": "Interactive Quizzes",
+        "description": "Test your knowledge with engaging quizzes that adapt to your progress"
+      },
+      "smartFlashcards": {
+        "title": "Smart Flashcards",
+        "description": "AI-powered flashcards that help reinforce key concepts and improve retention"
+      }
+    },
+    "modules": {
+      "title": "Featured Learning Modules",
+      "subtitle": "Start your learning journey with our most popular modules",
+      "startModule": "Start Module",
+      "difficulty": "Difficulty",
+      "duration": "Duration",
+      "topics": "Topics"
+    }
+  },
+  "upload": {
+    "subtitle": "Upload and manage your question sets for interactive learning",
+    "upload": {
+      "title": "Upload Question Set",
+      "description": "Upload a JSON file containing your questions and answers. The file must match the required schema format with all question types."
+    }
+  },
+  "login": {
+    "title": "Welcome Back",
+    "subtitle": "Sign in to your MindSpark account to continue learning",
+    "form": {
+      "email": "Email Address",
+      "password": "Password",
+      "signIn": "Sign In",
+      "signingIn": "Signing In..."
+    },
+    "securityNotice": "Your data is protected with enterprise-grade security"
+  }
+}
