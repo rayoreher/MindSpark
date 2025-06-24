@@ -63,7 +63,6 @@ export const Quiz = () => {
 
   const prepareQuestions = (data: SupabaseQuiz) => {
     const allQuestions: QuestionItem[] = [];
-    console.log("Preparing questions for quiz...", data);
     
     // Add open questions
     data.open_questions?.forEach((q) => {
@@ -159,6 +158,7 @@ export const Quiz = () => {
   };
 
   const startQuiz = () => {
+    prepareQuestions(question.data.quiz);
     setQuizStarted(true);
     setCurrentQuestionIndex(0);
     setQuizStates({});
@@ -198,6 +198,7 @@ export const Quiz = () => {
   };
 
   const renderCurrentQuestion = () => {
+    
     if (!questions.length || currentQuestionIndex >= questions.length) {
       return null;
     }
@@ -271,17 +272,12 @@ export const Quiz = () => {
             <>
               {/* Header */}
               <div className="text-center mb-12">
-                <div className="flex justify-center mb-6">
-                  <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center">
-                    <Brain className="w-8 h-8 text-primary-600" />
-                  </div>
-                </div>
                 <h1 className="text-4xl font-bold text-gray-900 mb-4">
                   {question.name}
                 </h1>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
                 <Accordion defaultOpenItems={[0]} allowMultiple>
                   <AccordionItem
                     title="Question"

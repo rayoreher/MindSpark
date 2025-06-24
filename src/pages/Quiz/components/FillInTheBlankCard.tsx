@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import { FillInTheBlank } from '../../../types/questions';
-
+import { Answer, FillInTheBlank } from '../../../types/supabaseQuestion';
+import { shuffle } from '../../../utils/shuffle';
+interface State {
+  selectedAnswer: string;
+  isSubmitted: boolean;
+  isCorrect?: boolean  | null;
+}
 interface FillInTheBlankCardProps {
   question: FillInTheBlank;
-  onStateChange?: (questionId: string, state: any) => void;
+  onStateChange?: (questionId: string, state: State) => void;
 }
 
 export const FillInTheBlankCard: React.FC<FillInTheBlankCardProps> = ({ 
@@ -15,6 +20,7 @@ export const FillInTheBlankCard: React.FC<FillInTheBlankCardProps> = ({
   // Each component instance has its own independent state
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [answers, ] = useState<Answer[]>(shuffle(question.answers));
 
   // Reset state when question changes (new question instance)
   useEffect(() => {
@@ -34,7 +40,7 @@ export const FillInTheBlankCard: React.FC<FillInTheBlankCardProps> = ({
             className={`inline-block min-w-[120px] px-3 py-1 mx-1 border-b-2 text-center font-medium ${
               selectedAnswer
                 ? isSubmitted
-                  ? question.answers.find(a => a.text === selectedAnswer)?.is_correct
+                  ? answers.find(a => a.text === selectedAnswer)?.is_correct
                     ? 'border-success-500 text-success-700 bg-success-50'
                     : 'border-error-500 text-error-700 bg-error-50'
                   : 'border-primary-500 text-primary-700 bg-primary-50'
@@ -62,7 +68,7 @@ export const FillInTheBlankCard: React.FC<FillInTheBlankCardProps> = ({
   const handleSubmit = () => {
     if (selectedAnswer) {
       setIsSubmitted(true);
-      const isCorrect = question.answers.find(a => a.text === selectedAnswer)?.is_correct || false;
+      const isCorrect = answers.find(a => a.text === selectedAnswer)?.is_correct || false;
       onStateChange?.(question.id, {
         selectedAnswer,
         isSubmitted: true,
@@ -89,7 +95,7 @@ export const FillInTheBlankCard: React.FC<FillInTheBlankCardProps> = ({
     }
 
     // After submission, show correct/incorrect
-    const answer = question.answers.find(a => a.text === answerText);
+    const answer = answers.find(a => a.text === answerText);
     const isCorrect = answer?.is_correct || false;
     const isSelected = selectedAnswer === answerText;
 
@@ -105,7 +111,7 @@ export const FillInTheBlankCard: React.FC<FillInTheBlankCardProps> = ({
   const getButtonIcon = (answerText: string) => {
     if (!isSubmitted) return null;
 
-    const answer = question.answers.find(a => a.text === answerText);
+    const answer = answers.find(a => a.text === answerText);
     const isCorrect = answer?.is_correct || false;
     const isSelected = selectedAnswer === answerText;
 
@@ -134,7 +140,7 @@ export const FillInTheBlankCard: React.FC<FillInTheBlankCardProps> = ({
           Choose the correct word:
         </p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {question.answers.map((answer, index) => (
+          {answers.map((answer, index) => (
             <button
               key={index}
               onClick={() => handleAnswerSelect(answer.text)}
@@ -173,7 +179,7 @@ export const FillInTheBlankCard: React.FC<FillInTheBlankCardProps> = ({
       {/* Result Message */}
       {isSubmitted && selectedAnswer && (
         <div className="mt-6 p-4 rounded-lg border">
-          {question.answers.find(a => a.text === selectedAnswer)?.is_correct ? (
+          {answers.find(a => a.text === selectedAnswer)?.is_correct ? (
             <div className="flex items-center space-x-2 text-success-700 bg-success-50 border-success-200">
               <CheckCircle className="w-5 h-5" />
               <span className="font-medium">Correct! Well done.</span>

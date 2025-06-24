@@ -79,4 +79,4 @@ interface MicroReel {
 }
 
 
-export type { SupabaseQuestion, SupabaseQuestionInfo, SupabaseData, SupabaseQuiz, SupabaseQuestionCreate };
+export type { SupabaseQuestion, SupabaseQuestionInfo, SupabaseData, SupabaseQuiz, SupabaseQuestionCreate, FillInTheBlank, OpenQuestion, MultipleChoiceQuestion, Answer, Flashcard, MicroReel };

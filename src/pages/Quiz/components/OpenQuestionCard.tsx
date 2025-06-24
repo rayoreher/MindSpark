@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Eye, Edit3 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import { OpenQuestion } from '../../../types/questions';
+import { OpenQuestion } from '../../../types/supabaseQuestion';
 
 interface OpenQuestionCardProps {
   question: OpenQuestion;
-  onStateChange?: (questionId: string, state: any) => void;
+  onStateChange?: (questionId: string, state: {userAnswer: string, isSubmitted: boolean, showCorrectAnswer: boolean, isMarkedCorrect: boolean, isCorrect?: boolean}) => void;
 }
 
 export const OpenQuestionCard: React.FC<OpenQuestionCardProps> = ({ 

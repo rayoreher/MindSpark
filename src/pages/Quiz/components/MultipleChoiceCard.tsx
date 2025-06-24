@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import { MultipleChoiceQuestion } from '../../../types/questions';
-
+import { MultipleChoiceQuestion } from '../../../types/supabaseQuestion';
+import { shuffle } from '../../../utils/shuffle';
+interface State {
+  selectedAnswer: number | null;
+  isSubmitted: boolean;
+  isCorrect?: boolean | null;
+}
 interface MultipleChoiceCardProps {
   question: MultipleChoiceQuestion;
-  onStateChange?: (questionId: string, state: any) => void;
+  onStateChange?: (questionId: string, state: State) => void;
 }
 
 export const MultipleChoiceCard: React.FC<MultipleChoiceCardProps> = ({ 
@@ -15,7 +20,7 @@ export const MultipleChoiceCard: React.FC<MultipleChoiceCardProps> = ({
   // Each component instance has its own independent state
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
+  const [answers] = useState(shuffle(question.answers));
   // Reset state when question changes (new question instance)
   useEffect(() => {
     setSelectedAnswer(null);
@@ -38,7 +43,7 @@ export const MultipleChoiceCard: React.FC<MultipleChoiceCardProps> = ({
       onStateChange?.(question.id, {
         selectedAnswer,
         isSubmitted: true,
-        isCorrect: question.answers[selectedAnswer].is_correct
+        isCorrect: answers[selectedAnswer].is_correct
       });
     }
   };
@@ -61,7 +66,7 @@ export const MultipleChoiceCard: React.FC<MultipleChoiceCardProps> = ({
     }
 
     // After submission, show correct/incorrect
-    const isCorrect = question.answers[index].is_correct;
+    const isCorrect = answers[index].is_correct;
     const isSelected = selectedAnswer === index;
 
     if (isCorrect) {
@@ -76,7 +81,7 @@ export const MultipleChoiceCard: React.FC<MultipleChoiceCardProps> = ({
   const getAnswerIcon = (index: number) => {
     if (!isSubmitted) return null;
 
-    const isCorrect = question.answers[index].is_correct;
+    const isCorrect = answers[index].is_correct;
     const isSelected = selectedAnswer === index;
 
     if (isCorrect) {
@@ -97,7 +102,7 @@ export const MultipleChoiceCard: React.FC<MultipleChoiceCardProps> = ({
 
       {/* Answer Options */}
       <div className="space-y-3 mb-8">
-        {question.answers.map((answer, index) => (
+        {answers.map((answer, index) => (
           <button
             key={index}
             onClick={() => handleAnswerSelect(index)}
@@ -135,7 +140,7 @@ export const MultipleChoiceCard: React.FC<MultipleChoiceCardProps> = ({
       {/* Result Message */}
       {isSubmitted && selectedAnswer !== null && (
         <div className="mt-6 p-4 rounded-lg border">
-          {question.answers[selectedAnswer].is_correct ? (
+          {answers[selectedAnswer].is_correct ? (
             <div className="flex items-center space-x-2 text-success-700 bg-success-50 border-success-200">
               <CheckCircle className="w-5 h-5" />
               <span className="font-medium">Correct! Well done.</span>
