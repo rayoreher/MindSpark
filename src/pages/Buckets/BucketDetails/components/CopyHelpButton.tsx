@@ -10,7 +10,7 @@ export const CopyHelpButton = ({
   const handleCopy = () => {
     navigator.clipboard
       .writeText(JSON.stringify({
-        prompt: "##HELP##"
+        command: "##HELP##"
       }, null, 2))
       .then(() => {})
       .catch((err) => {

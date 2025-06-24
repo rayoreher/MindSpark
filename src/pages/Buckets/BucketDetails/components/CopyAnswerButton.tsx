@@ -10,7 +10,7 @@ export const CopyAnswerButton = ({
   const handleCopy = () => {
     navigator.clipboard
       .writeText(JSON.stringify({
-        prompt: "##ANSWER##",
+        command: "##ANSWER##",
         answer: "Your answer here"
       }, null, 2))
       .then(() => {})

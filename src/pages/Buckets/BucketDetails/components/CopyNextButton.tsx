@@ -10,7 +10,7 @@ export const CopyNextButton = ({
   const handleCopy = () => {
     navigator.clipboard
       .writeText(JSON.stringify({
-        prompt: "##NEXT##"
+        command: "##NEXT##"
       }, null, 2))
       .then(() => {})
       .catch((err) => {

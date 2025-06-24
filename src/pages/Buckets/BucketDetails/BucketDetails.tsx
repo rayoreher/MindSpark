@@ -140,15 +140,7 @@ export const BucketDetails = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <CopyPromptButton
-                  settings={data.prompt_settings}
-                />
-                <CopyNextButton/>
-                <CopyAnswerButton/>
-                <CopyHelpButton/>
-                <CopyAutoAnswerButton/>
-              </div>
+              <div className="flex items-center space-x-3"></div>
             </div>
           </div>
 
@@ -167,8 +159,7 @@ export const BucketDetails = () => {
             </div>
           </div>
           {/* Questions List */}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             {data.questions?.map((question) => (
               <QuestionCard
                 key={question.id}
@@ -176,6 +167,18 @@ export const BucketDetails = () => {
                 handleQuestionClick={handleQuestionClick}
               />
             ))}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <div className="flex flex-col lg:flex-row gap-4 items-center justify-end">
+              <div className="flex items-center space-x-4">
+                <CopyPromptButton settings={data.prompt_settings} />
+                <CopyNextButton />
+                <CopyAnswerButton />
+                <CopyHelpButton />
+                <CopyAutoAnswerButton />
+              </div>
+            </div>
           </div>
         </div>
       </div>

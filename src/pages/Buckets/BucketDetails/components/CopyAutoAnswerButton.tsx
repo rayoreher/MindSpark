@@ -10,7 +10,7 @@ export const CopyAutoAnswerButton = ({
   const handleCopy = () => {
     navigator.clipboard
       .writeText(JSON.stringify({
-        prompt: "##AUTOMATIC_ANSWER##"
+        command: "##AUTOMATIC_ANSWER##"
       }, null, 2))
       .then(() => {})
       .catch((err) => {
