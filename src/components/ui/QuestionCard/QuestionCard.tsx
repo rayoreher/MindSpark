@@ -1,18 +1,14 @@
 import { Brain, Play } from "lucide-react";
 import { Button } from "../Button";
 import { formatDateShort } from "../../../utils/formatDate";
-import { SupabaseQuestion, SupabaseQuestionInfo } from "../../../types/supabaseQuestion";
+import { SupabaseQuestionInfo } from "../../../types/supabaseQuestion";
 
-const calculateTotal = (info: SupabaseQuestionInfo) => {
-  return info.open_questions + info.multiple_choice_questions + info.fill_in_the_blank + info.flashcards + info.micro_reels;
-}
-
-const QuestionCard = ({ question, handleQuestionSetClick }: { question: SupabaseQuestion, handleQuestionSetClick: (id: string) => void }) => {
+const QuestionCard = ({ question, handleQuestionClick }: { question: { id: string, name: string, info: SupabaseQuestionInfo, created_at: string }, handleQuestionClick: (id: string) => void }) => {
 
   return (
     <div
     key={question.id}
-    onClick={() => handleQuestionSetClick(question.id)}
+    onClick={() => handleQuestionClick(question.id)}
     className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-primary-200 transition-all duration-300 cursor-pointer group"
   >
     {/* Header */}
@@ -57,7 +53,7 @@ const QuestionCard = ({ question, handleQuestionSetClick }: { question: Supabase
         </div>
         <div className="flex justify-between pt-1 border-t border-gray-100">
           <span className="text-gray-900 font-medium">Total:</span>
-          <span className="font-bold text-primary-600">{calculateTotal(question.info)}</span>
+          <span className="font-bold text-primary-600">{question.info.total}</span>
         </div>
       </div>
     </div>
@@ -66,10 +62,6 @@ const QuestionCard = ({ question, handleQuestionSetClick }: { question: Supabase
     <Button
       className="w-full group-hover:bg-primary-700 transition-colors"
       icon={Play}
-      onClick={(e) => {
-        e.stopPropagation();
-        handleQuestionSetClick(question.id);
-      }}
     >
       Start Quiz
     </Button>

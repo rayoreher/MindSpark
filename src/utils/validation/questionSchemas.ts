@@ -1,64 +1,81 @@
 import { z } from 'zod';
+import { SupabaseData } from '../../types/supabaseQuestion';
 
+// Answer schema for multiple choice and fill-in-the-blank questions
 const AnswerSchema = z.object({
-  text: z.string().min(1, 'Answer text is required'),
-  is_correct: z.boolean()
+  text: z.string(),
+  is_correct: z.boolean(),
 });
 
+// Open-ended question schema
 const OpenQuestionSchema = z.object({
-  id: z.string().min(1, 'Question ID is required'),
-  question: z.string().min(1, 'Question text is required'),
-  answer: z.string().min(1, 'Answer is required')
+  id: z.string(),
+  question: z.string(),
+  answer: z.string(),
 });
 
+// Multiple choice question schema
 const MultipleChoiceQuestionSchema = z.object({
-  id: z.string().min(1, 'Question ID is required'),
-  question: z.string().min(1, 'Question text is required'),
-  answers: z.array(AnswerSchema).min(1, 'At least one answer is required')
+  id: z.string(),
+  question: z.string(),
+  answers: z.array(AnswerSchema).min(4), // Must have at least 4 answers
 });
 
-const FillInTheBlankSchema = z.object({
-  id: z.string().min(1, 'Question ID is required'),
-  question: z.string().min(1, 'Question text is required'),
-  answers: z.array(AnswerSchema).min(1, 'At least one answer is required')
+// Fill-in-the-blank question schema
+const FillInTheBlankQuestionSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  answers: z.array(AnswerSchema).min(4), // Must have at least 4 answers
 });
 
+// Flashcard schema
 const FlashcardSchema = z.object({
-  id: z.string().min(1, 'Flashcard ID is required'),
-  front: z.string().min(1, 'Front text is required'),
-  back: z.string().min(1, 'Back text is required')
+  id: z.string(),
+  front: z.string(),
+  back: z.string(),
 });
 
+// Micro reel schema
 const MicroReelSchema = z.object({
-  id: z.string().min(1, 'Micro reel ID is required'),
-  text: z.string().min(1, 'Text is required')
+  id: z.string(),
+  text: z.string(),
 });
 
-// Base schema with optional ID
-const BaseQuestionsSchema = z.object({
-  id: z.string().min(1, 'Questions set ID is required').optional(),
-  open_questions: z.array(OpenQuestionSchema),
-  multiple_choice_questions: z.array(MultipleChoiceQuestionSchema),
-  fill_in_the_blank: z.array(FillInTheBlankSchema),
-  flashcards: z.array(FlashcardSchema),
-  micro_reels: z.array(MicroReelSchema)
+// Quiz schema containing all question types
+const QuizSchema = z.object({
+  open_questions: z.array(OpenQuestionSchema).min(1),
+  multiple_choice_questions: z.array(MultipleChoiceQuestionSchema).min(1),
+  fill_in_the_blank: z.array(FillInTheBlankQuestionSchema).min(1),
+  flashcards: z.array(FlashcardSchema).min(1),
+  micro_reels: z.array(MicroReelSchema).min(1),
 });
 
-// Transform schema that generates UUID if ID is missing
-export const QuestionsSchema = BaseQuestionsSchema.transform((data) => {
-  if (!data.id) {
-    // Generate a UUID v4
-    data.id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  }
-  return data;
+// Main learning content schema
+export const LearningContentSchema = z.object({
+  success: z.boolean(),
+  title: z.string(),
+  question: z.string(),
+  answer: z.string(),
+  tips: z.array(z.string()).min(1),
+  correctness_percent: z.number(),
+  quiz: QuizSchema,
 });
 
+// Type inference for TypeScript
+//export type LearningContent = z.infer<typeof LearningContentSchema>;
+
+// Example usage:
+// const validatedData = LearningContentSchema.parse(jsonData);
+
+// For safer parsing with error handling:
+// const result = LearningContentSchema.safeParse(jsonData);
+// if (result.success) {
+//   console.log('Valid data:', result.data);
+// } else {
+//   console.error('Validation errors:', result.error.issues);
+// }
 export type QuestionsValidationResult = {
   isValid: boolean;
   errors: string[];
-  data?: any;
+  data?: SupabaseData;
 };

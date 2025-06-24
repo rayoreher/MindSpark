@@ -1,11 +1,11 @@
 import React, { useRef, useState, useImperativeHandle, forwardRef } from 'react';
-import { Upload, File, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../Button';
-import { QuestionsSchema, QuestionsValidationResult } from '../../../utils/validation/questionSchemas';
+import { LearningContentSchema, QuestionsValidationResult } from '../../../utils/validation/questionSchemas';
+import { SupabaseData } from '../../../types/supabaseQuestion';
 
 interface FileUploaderProps {
-  onFileUpload: (file: File, content: any) => void;
-  onValidationChange: (result: QuestionsValidationResult) => void;
+  onFileUpload: (content: SupabaseData) => void;
   onError?: (error: string) => void;
   acceptedFileTypes?: string[];
   maxFileSize?: number; // in MB
@@ -18,7 +18,6 @@ export interface FileUploaderRef {
 
 export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(({
   onFileUpload,
-  onValidationChange,
   onError,
   acceptedFileTypes = ['.json'],
   maxFileSize = 5,
@@ -41,13 +40,11 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(({
   }));
 
   const validateFile = (file: File): string | null => {
-    // Check file type
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!acceptedFileTypes.includes(fileExtension)) {
       return `Only ${acceptedFileTypes.join(', ')} files are allowed`;
     }
 
-    // Check file size
     const fileSizeMB = file.size / (1024 * 1024);
     if (fileSizeMB > maxFileSize) {
       return `File size must be less than ${maxFileSize}MB`;
@@ -56,16 +53,16 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(({
     return null;
   };
 
-  const validateJsonSchema = (data: any): QuestionsValidationResult => {
+  const validateJsonSchema = (data: SupabaseData): QuestionsValidationResult => {
     try {
-      const validatedData = QuestionsSchema.parse(data);
+      const validatedData = LearningContentSchema.parse(data);
       return {
         isValid: true,
         errors: [],
         data: validatedData
       };
-    } catch (error: any) {
-      const errors = error.errors?.map((err: any) => {
+    } catch (error) {
+      const errors = (error as { errors: { path: string[], message: string }[] }).errors?.map((err) => {
         const path = err.path.join('.');
         return `${path}: ${err.message}`;
       }) || ['Invalid schema format'];
@@ -73,7 +70,7 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(({
       return {
         isValid: false,
         errors,
-        data: null
+        data: undefined
       };
     }
   };
@@ -83,16 +80,15 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(({
     
     try {
       const text = await file.text();
-      const jsonContent = JSON.parse(text);
+      const jsonContent = JSON.parse(text) as SupabaseData;
       
       // Validate against schema
       const validation = validateJsonSchema(jsonContent);
       setValidationResult(validation);
-      onValidationChange(validation);
       
       if (validation.isValid) {
         setUploadedFile(file);
-        onFileUpload(file, validation.data);
+        onFileUpload(validation.data!);
       } else {
         // Clear file if validation fails
         setUploadedFile(null);
@@ -102,9 +98,9 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(({
         onError?.(`Schema validation failed: ${validation.errors.join(', ')}`);
       }
     } catch (error) {
+      console.error('Error processing file:', error);
       const errorMsg = 'Invalid JSON file. Please check the file format.';
       setValidationResult({ isValid: false, errors: [errorMsg] });
-      onValidationChange({ isValid: false, errors: [errorMsg] });
       setUploadedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -124,7 +120,6 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(({
 
     if (validationError) {
       setValidationResult({ isValid: false, errors: [validationError] });
-      onValidationChange({ isValid: false, errors: [validationError] });
       onError?.(validationError);
       return;
     }
@@ -155,7 +150,6 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(({
   const handleRemoveFile = () => {
     setUploadedFile(null);
     setValidationResult({ isValid: false, errors: [] });
-    onValidationChange({ isValid: false, errors: [] });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

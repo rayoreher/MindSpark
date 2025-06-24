@@ -1,3 +1,3 @@
 export { Buckets } from './Buckets';
-export { CreateBucket } from './CreateBucket';
-export { BucketDetails } from './BucketDetails';
+export { BucketCreate } from './BucketCreate/BucketCreate';
+export { BucketDetails } from './BucketDetails/BucketDetails';

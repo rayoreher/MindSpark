@@ -1,43 +1,30 @@
-import React, { useState, useEffect } from "react";
+import { Suspense, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MainLayout } from "../../layouts/MainLayout";
 import {
   Brain,
   ArrowLeft,
   Play,
   ChevronLeft,
   ChevronRight,
-  RotateCcw,
-  RotateCw,
+  RotateCcw, 
   MessageSquare,
   HelpCircle,
+  Lightbulb,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-import { supabase } from "../../lib/supabase";
-import { LoadingSkeleton } from "../../components/common/LoadingSkeleton";
 import { OpenQuestionCard } from "./components/OpenQuestionCard";
 import { MultipleChoiceCard } from "./components/MultipleChoiceCard";
 import { FillInTheBlankCard } from "./components/FillInTheBlankCard";
 import { FlashcardCard } from "./components/FlashcardCard";
 import { MicroReelCard } from "./components/MicroReelCard";
-
-interface QuestionInfo {
-  open_questions: number;
-  multiple_choice_questions: number;
-  fill_in_the_blank: number;
-  flashcards: number;
-  micro_reels: number;
-}
-
-interface QuestionSet {
-  id: string;
-  name: string;
-  data: any;
-  info: QuestionInfo;
-  question: string;
-  answer: string;
-  created_at: string;
-}
+import {
+  Accordion,
+  AccordionItem,
+} from "../../components/ui/Accordion/Accordion";
+import { MarkdownRenderer } from "../../components/ui/MarkdownRenderer/MarkdownRenderer";
+import { useQuestionById } from "../../queries/getQuestionById";
+import { SupabaseQuiz } from "../../types/supabaseQuestion";
+import { Loading } from "../../components/Loading/Loading";
 
 type QuestionItem = {
   id: string;
@@ -48,22 +35,22 @@ type QuestionItem = {
     | "flashcard"
     | "micro_reel";
   data: any;
-  // Add a unique key to ensure each question instance is truly independent
   instanceKey: string;
 };
 
-export const Quiz: React.FC = () => {
-  const { questionId, id } = useParams();
+export const Quiz = () => {
+  const { questionId, id: bucketId } = useParams<{ questionId: string; id: string }>();
   const navigate = useNavigate();
-  console.log(questionId, id);
 
-  const [questionSet, setQuestionSet] = useState<QuestionSet | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  if (!questionId || !bucketId) {
+    throw new Error("Missing questionId or id parameter");
+  }
+
+  const { data: question } = useQuestionById(questionId);
+
   const [quizStarted, setQuizStarted] = useState(false);
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [showQuestionAnswer, setShowQuestionAnswer] = useState(false);
 
   // Quiz state tracking - independent from component states
   const [quizStates, setQuizStates] = useState<Record<string, any>>({});
@@ -74,44 +61,10 @@ export const Quiz: React.FC = () => {
     timeSpent: 0,
   });
 
-  useEffect(() => {
-    if (questionId) {
-      fetchQuestionSet();
-    }
-  }, [questionId]);
-
-  const fetchQuestionSet = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error } = await supabase
-        .from("questions")
-        .select("id, name, data, info, question, answer, created_at")
-        .eq("id", questionId)
-        .single();
-      console.log(data);
-      if (error) {
-        throw error;
-      }
-
-      if (!data) {
-        throw new Error("Question set not found");
-      }
-
-      setQuestionSet(data);
-      prepareQuestions(data.data);
-    } catch (err: any) {
-      console.error("Error fetching question set:", err);
-      setError(err.message || "Failed to load question set");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const prepareQuestions = (data: QuestionsType) => {
+  const prepareQuestions = (data: SupabaseQuiz) => {
     const allQuestions: QuestionItem[] = [];
-
+    console.log("Preparing questions for quiz...", data);
+    
     // Add open questions
     data.open_questions?.forEach((q) => {
       allQuestions.push({
@@ -239,44 +192,9 @@ export const Quiz: React.FC = () => {
       correctAnswers: 0,
       timeSpent: 0,
     }));
-    if (questionSet) {
-      prepareQuestions(questionSet.data); // Re-shuffle questions with new instance keys
+    if (question) {
+      prepareQuestions(question.data.quiz); // Re-shuffle questions with new instance keys
     }
-  };
-
-  const getQuestionCounts = (questionSet: QuestionSet) => {
-    // Use info field if available, otherwise fallback to counting from data
-    if (questionSet.info) {
-      return {
-        openQuestions: questionSet.info.open_questions,
-        multipleChoice: questionSet.info.multiple_choice_questions,
-        fillInTheBlank: questionSet.info.fill_in_the_blank,
-        flashcards: questionSet.info.flashcards,
-        microReels: questionSet.info.micro_reels,
-        total:
-          questionSet.info.open_questions +
-          questionSet.info.multiple_choice_questions +
-          questionSet.info.fill_in_the_blank +
-          questionSet.info.flashcards +
-          questionSet.info.micro_reels,
-      };
-    }
-
-    // Fallback to counting from data (for older records without info field)
-    const data = questionSet.data;
-    return {
-      openQuestions: data.open_questions?.length || 0,
-      multipleChoice: data.multiple_choice_questions?.length || 0,
-      fillInTheBlank: data.fill_in_the_blank?.length || 0,
-      flashcards: data.flashcards?.length || 0,
-      microReels: data.micro_reels?.length || 0,
-      total:
-        (data.open_questions?.length || 0) +
-        (data.multiple_choice_questions?.length || 0) +
-        (data.fill_in_the_blank?.length || 0) +
-        (data.flashcards?.length || 0) +
-        (data.micro_reels?.length || 0),
-    };
   };
 
   const renderCurrentQuestion = () => {
@@ -333,153 +251,8 @@ export const Quiz: React.FC = () => {
     }
   };
 
-  const renderQuestionAnswerCard = () => {
-    if (!questionSet) return null;
-
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900">
-            {showQuestionAnswer ? "Answer" : "Question"}
-          </h2>
-          <Button
-            variant="outline"
-            size="sm"
-            icon={RotateCw}
-            onClick={() => setShowQuestionAnswer(!showQuestionAnswer)}
-          >
-            {showQuestionAnswer ? "Show Question" : "Show Answer"}
-          </Button>
-        </div>
-
-        <div className="relative h-64 perspective-1000">
-          <div
-            className={`relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${
-              showQuestionAnswer ? "rotate-y-180" : ""
-            }`}
-          >
-            {/* Question Side */}
-            <div className="absolute inset-0 w-full h-full backface-hidden">
-              <div className="w-full h-full bg-gradient-to-br from-primary-50 to-primary-100 border-2 border-primary-200 rounded-xl flex items-center justify-center py-4 px-6 shadow-lg">
-                <div className="max-h-50 overflow-y-auto custom-scrollbar">
-                  <p className="text-lg font-semibold text-gray-900 leading-relaxed">
-                    {questionSet.question}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Answer Side */}
-            <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180">
-              <div className="w-full h-full bg-gradient-to-br from-secondary-50 to-secondary-100 border-2 border-secondary-200 rounded-xl flex items-center justify-center py-4 px-6 shadow-lg">
-                  <div className="max-h-32 overflow-y-auto custom-scrollbar">
-                    <p className="text-lg font-semibold text-gray-900 leading-relaxed">
-                      {questionSet.answer}
-                    </p>
-                  </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <style jsx>{`
-          .perspective-1000 {
-            perspective: 1000px;
-          }
-          .transform-style-preserve-3d {
-            transform-style: preserve-3d;
-          }
-          .backface-hidden {
-            backface-visibility: hidden;
-          }
-          .rotate-y-180 {
-            transform: rotateY(180deg);
-          }
-          .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-          }
-          .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(243, 244, 246, 0.5);
-            border-radius: 3px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.7);
-            border-radius: 3px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(107, 114, 128, 0.8);
-          }
-        `}</style>
-      </div>
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen bg-gray-50 py-20">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="space-y-6">
-              <LoadingSkeleton className="w-32 h-10" />
-              <div className="text-center space-y-4">
-                <LoadingSkeleton variant="circle" className="mx-auto" />
-                <LoadingSkeleton className="w-64 h-8 mx-auto" />
-                <LoadingSkeleton className="w-96 h-4 mx-auto" />
-              </div>
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                <LoadingSkeleton className="w-full h-64" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (error || !questionSet) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen bg-gray-50 py-20">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-8">
-              <Button
-                variant="outline"
-                icon={ArrowLeft}
-                onClick={() => navigate(`/buckets/${id}`)}
-              >
-                Back to Bucket Details
-              </Button>
-            </div>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 bg-error-100 rounded-2xl flex items-center justify-center">
-                  <Brain className="w-8 h-8 text-error-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {error || "Question set not found"}
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Unable to load the requested question set.
-                </p>
-                <Button onClick={() => navigate(`/buckets/${id}`)}>
-                  Back to Bucket Details
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const counts = getQuestionCounts(questionSet);
-
   return (
-    <MainLayout>
+    <Suspense fallback={<Loading />}>
       <div className="min-h-screen bg-gray-50 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
@@ -487,7 +260,7 @@ export const Quiz: React.FC = () => {
             <Button
               variant="outline"
               icon={ArrowLeft}
-              onClick={() => navigate(`/buckets/${id}`)}
+              onClick={() => navigate(`/buckets/${bucketId}`)}
             >
               Back to Bucket Details
             </Button>
@@ -504,12 +277,34 @@ export const Quiz: React.FC = () => {
                   </div>
                 </div>
                 <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                  {questionSet.name}
+                  {question.name}
                 </h1>
               </div>
 
-              {/* Question & Answer Card */}
-              {renderQuestionAnswerCard()}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <Accordion defaultOpenItems={[0]} allowMultiple>
+                  <AccordionItem
+                    title="Question"
+                    icon={<MessageSquare className="w-4 h-4" />}
+                  >
+                    <MarkdownRenderer content={question.question} />
+                  </AccordionItem>
+
+                  <AccordionItem
+                    title="Answer"
+                    icon={<HelpCircle className="w-4 h-4" />}
+                  >
+                    <MarkdownRenderer content={question.answer} />
+                  </AccordionItem>
+
+                  <AccordionItem
+                    title="Tips & Best Practices"
+                    icon={<Lightbulb className="w-4 h-4" />}
+                  >
+                    <MarkdownRenderer content={question.data.tips.map(item => `- ${item}`).join('\n')} />
+                  </AccordionItem>
+                </Accordion>
+              </div>
 
               {/* Quiz Overview */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
@@ -520,37 +315,37 @@ export const Quiz: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-primary-600 mb-1">
-                      {counts.openQuestions}
+                      {question.info.open_questions}
                     </div>
                     <div className="text-sm text-gray-600">Open Questions</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-secondary-600 mb-1">
-                      {counts.multipleChoice}
+                      {question.info.multiple_choice_questions}
                     </div>
                     <div className="text-sm text-gray-600">Multiple Choice</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-accent-600 mb-1">
-                      {counts.fillInTheBlank}
+                      {question.info.fill_in_the_blank}
                     </div>
                     <div className="text-sm text-gray-600">Fill in Blank</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-success-600 mb-1">
-                      {counts.flashcards}
+                      {question.info.flashcards}
                     </div>
                     <div className="text-sm text-gray-600">Flashcards</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-error-600 mb-1">
-                      {counts.microReels}
+                      {question.info.micro_reels}
                     </div>
                     <div className="text-sm text-gray-600">Micro Reels</div>
                   </div>
                   <div className="text-center p-4 bg-primary-50 rounded-lg border-2 border-primary-200">
                     <div className="text-2xl font-bold text-primary-700 mb-1">
-                      {counts.total}
+                      {question.info.total}
                     </div>
                     <div className="text-sm text-primary-600 font-medium">
                       Total Questions
@@ -650,6 +445,6 @@ export const Quiz: React.FC = () => {
           )}
         </div>
       </div>
-    </MainLayout>
+    </Suspense>  
   );
 };
